@@ -21,7 +21,6 @@ public:
     vector<float> eigenvalues;
 };
 
-
 class ofxPCA{
 public:
     ofxPCA();
