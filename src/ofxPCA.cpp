@@ -14,24 +14,21 @@ ofxPCA::ofxPCA(){
 ofxPCA::~ofxPCA(){
 }
 
-ofxPCAResult ofxPCA::analyze(vector<ofVec3f>& points){
-    int rows = points.size();
-    int cols = 3; // vec3f has three components
+void ofxPCA::loadData(const vector<ofVec3f>& points){
+    int n = 3; // vec3f has three components
+    data = Map<MatrixVec3f>((float *)points.data(), points.size(), n);
+}
 
-    // custom Matrix type for loading in data from ofVec3fs
-    typedef Matrix<float, Dynamic, Dynamic, RowMajor> MatrixVec3f;
-
-    // vector's data() member function returns a pointer to the first element
-    // the elements are laid out continuously in memory cf http://www.frogatto.com/?p=26
-    // casting that to a pointer to a float will treat the vector as a 1D array of floats
-    Map<MatrixVec3f> data((float *)points.data(), rows, cols);
+ofxPCAResult ofxPCA::analyze(int startCol, int startRow, int numCols, int numRows){
+    MatrixVec3f d = data.block(startRow, startCol, numRows, numCols);
     
-    MatrixVec3f meanCentered = data.rowwise() - data.colwise().mean();
-    MatrixVec3f cov = (meanCentered.adjoint() * meanCentered) / double(data.rows());
+    
+    MatrixVec3f meanCentered = d.rowwise() - d.colwise().mean();
+    MatrixVec3f cov = (meanCentered.adjoint() * meanCentered) / double(d.rows());
     EigenSolver<MatrixVec3f> eig(cov);
     
     vector<pair<float,int> > pi;
-    for (int i = 0 ; i < cols; i++){
+    for (int i = 0 ; i < d.cols() ; i++){
         pi.push_back(make_pair(eig.eigenvalues().real()[i], i));
     }
 
@@ -52,11 +49,21 @@ ofxPCAResult ofxPCA::analyze(vector<ofVec3f>& points){
 }
 
 
+ofxPCAResult ofxPCA::analyze(const vector<ofVec3f>& points){
+    loadData(points);
+    return analyze(0,0,3, points.size());
+}
+
+ofxPCAResult::ofxPCAResult(){
+}
+
 
 ofxPCAResult::ofxPCAResult(vector<ofVec3f> eVectors, vector<float> eValues){
     eigenvectors = eVectors;
     eigenvalues = eValues;
 }
+
+
 
 ofxPCAResult::~ofxPCAResult(){
 }
